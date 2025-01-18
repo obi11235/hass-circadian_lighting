@@ -34,7 +34,6 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 from homeassistant.util.color import (
     color_RGB_to_xy,
-    color_temperature_kelvin_to_mired,
     color_temperature_to_rgb,
     color_xy_to_hs,
 )
@@ -295,7 +294,7 @@ class CircadianSwitch(SwitchEntity, RestoreEntity):
         )
 
     def _calc_ct(self):
-        return color_temperature_kelvin_to_mired(self._color_temperature())
+        return self._color_temperature()
 
     def _calc_rgb(self):
         return color_temperature_to_rgb(self._color_temperature())
