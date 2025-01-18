@@ -8,6 +8,8 @@ from itertools import repeat
 
 import voluptuous as vol
 
+from homeassistant.core import Event, EventStateChangedData, callback
+
 import homeassistant.helpers.config_validation as cv
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -379,6 +381,7 @@ class CircadianSwitch(SwitchEntity, RestoreEntity):
         if tasks:
             await asyncio.wait(tasks)
 
+    @callback
     async def _light_state_changed(self, event: Event[EventStateChangedData]):
         entity_id = event.data["entity_id"]
         old_state = event.data["old_state"]
