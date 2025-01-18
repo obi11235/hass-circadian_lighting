@@ -30,7 +30,6 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.helpers.event import async_track_state_change
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 from homeassistant.util.color import (
@@ -237,17 +236,18 @@ class CircadianSwitch(SwitchEntity, RestoreEntity):
         async_track_state_change_event(
             self.hass, self._lights, self._light_state_changed
         )
-        track_kwargs = dict(hass=self.hass, action=self._state_changed)
         if self._sleep_entity is not None:
-            sleep_kwargs = dict(track_kwargs, entity_ids=self._sleep_entity)
-            async_track_state_change(**sleep_kwargs, to_state=self._sleep_state)
-            async_track_state_change(**sleep_kwargs, from_state=self._sleep_state)
+            async_track_state_change_event(
+                hass=self.hass, 
+                action=self._state_changed_sleep, 
+                entity_ids=self._sleep_entity
+            )
 
         if self._disable_entity is not None:
-            async_track_state_change(
-                **track_kwargs,
+            async_track_state_change_event(
+                hass=self.hass, 
+                action=self._state_changed_disable
                 entity_ids=self._disable_entity,
-                from_state=self._disable_state,
             )
 
         if self._state is not None:  # If not None, we got an initial value
@@ -386,11 +386,31 @@ class CircadianSwitch(SwitchEntity, RestoreEntity):
         entity_id = event.data["entity_id"]
         from_state = event.data["old_state"]
         to_state = event.data["new_state"]
-        assert to_state.state == "on"
+        
+        if to_state.state != "on":
+            return
         if from_state is None or from_state.state != "on":
             _LOGGER.debug(_difference_between_states(from_state, to_state))
             await self._force_update_switch(lights=[entity_id])
 
-    async def _state_changed(self, entity_id, from_state, to_state):
+    @callback
+    async def _state_changed_sleep(self, event: Event[EventStateChangedData]):
+        entity_id = event.data["entity_id"]
+        from_state = event.data["old_state"]
+        to_state = event.data["new_state"]
+        if to_state != self._sleep_state and from_state != self._sleep_state:
+            return
         _LOGGER.debug(_difference_between_states(from_state, to_state))
         await self._force_update_switch()
+
+    async def _state_changed_disable(self, event: Event[EventStateChangedData]):
+        entity_id = event.data["entity_id"]
+        from_state = event.data["old_state"]
+        to_state = event.data["new_state"]
+
+        if from_state != self._disable_state:
+            return
+        
+        _LOGGER.debug(_difference_between_states(from_state, to_state))
+        await self._force_update_switch()
+
