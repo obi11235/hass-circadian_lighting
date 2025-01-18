@@ -384,8 +384,8 @@ class CircadianSwitch(SwitchEntity, RestoreEntity):
     @callback
     async def _light_state_changed(self, event: Event[EventStateChangedData]):
         entity_id = event.data["entity_id"]
-        old_state = event.data["old_state"]
-        new_state = event.data["new_state"]
+        from_state = event.data["old_state"]
+        to_state = event.data["new_state"]
         assert to_state.state == "on"
         if from_state is None or from_state.state != "on":
             _LOGGER.debug(_difference_between_states(from_state, to_state))
