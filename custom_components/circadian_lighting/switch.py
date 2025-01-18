@@ -27,7 +27,7 @@ from homeassistant.const import (
     STATE_ON,
 )
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.event import async_track_state_change
+from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util import slugify
 from homeassistant.util.color import (
@@ -231,17 +231,17 @@ class CircadianSwitch(SwitchEntity, RestoreEntity):
         )
 
         # Add listeners
-        async_track_state_change(
+        async_track_state_change_event(
             self.hass, self._lights, self._light_state_changed, to_state="on"
         )
         track_kwargs = dict(hass=self.hass, action=self._state_changed)
         if self._sleep_entity is not None:
             sleep_kwargs = dict(track_kwargs, entity_ids=self._sleep_entity)
-            async_track_state_change(**sleep_kwargs, to_state=self._sleep_state)
-            async_track_state_change(**sleep_kwargs, from_state=self._sleep_state)
+            async_track_state_change_event(**sleep_kwargs, to_state=self._sleep_state)
+            async_track_state_change_event(**sleep_kwargs, from_state=self._sleep_state)
 
         if self._disable_entity is not None:
-            async_track_state_change(
+            async_track_state_change_event(
                 **track_kwargs,
                 entity_ids=self._disable_entity,
                 from_state=self._disable_state,
